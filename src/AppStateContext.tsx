@@ -1,8 +1,10 @@
-import React, { createContext, useReducer, useContext } from "react";
+import React, { createContext, useReducer, useContext, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { findItemIndexById } from "./util/findItemIndexById";
 import { moveItem } from "./util/moveItem";
 import { DragItem } from "./DragItem";
+import { save } from "./api";
+import { withData } from "./withData";
 
 interface Task {
   id: string;
@@ -134,14 +136,23 @@ const appStateReducer = (state: AppState, action: Action): AppState => {
   }
 };
 
-export const AppStateProvider = ({ children }: React.PropsWithChildren<{}>) => {
-  const [state, dispatch] = useReducer(appStateReducer, appData);
-  return (
-    <AppStateContext.Provider value={{ state, dispatch }}>
-      {children}
-    </AppStateContext.Provider>
-  );
-};
+export const AppStateProvider = withData(
+  ({
+    children,
+    initialState,
+  }: React.PropsWithChildren<{ initialState: AppState }>) => {
+    const [state, dispatch] = useReducer(appStateReducer, initialState);
+
+    useEffect(() => {
+      save(state);
+    }, [state]);
+    return (
+      <AppStateContext.Provider value={{ state, dispatch }}>
+        {children}
+      </AppStateContext.Provider>
+    );
+  }
+);
 
 export const useAppState = () => {
   return useContext(AppStateContext);
